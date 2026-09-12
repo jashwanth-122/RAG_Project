@@ -1,0 +1,45 @@
+Customer Churn Prediction Project
+
+Project Overview:
+This project focused on developing a machine learning solution to identify customers who may be at risk of becoming inactive.
+
+Objective:
+The objective was to analyze historical customer purchasing behavior and build a predictive model that could estimate customer churn risk.
+
+Data:
+The project used anonymized customer and transaction-level information. No confidential company, customer, or personally identifiable information is included in this document.
+
+Data Preparation:
+The data was cleaned and prepared using Python. This included handling missing values, removing irrelevant records, combining multiple data sources, and preparing the data for machine learning.
+
+Feature Engineering:
+Several behavioral features were created, including:
+- Purchase recency
+- Purchase frequency
+- Transaction count
+- Total purchase value
+- Average order value
+- Customer activity patterns
+
+Machine Learning:
+Multiple steps were performed to prepare the dataset for classification. A Random Forest classifier was used to predict customer churn risk.
+
+Model Evaluation:
+The model was evaluated using classification metrics and ROC-AUC. The final model achieved an ROC-AUC of approximately 0.82.
+
+Risk Segmentation:
+Predicted probabilities were used to group customers into different risk levels. This made the model output easier to interpret and potentially useful for customer retention strategies.
+
+Technologies:
+- Python
+- Pandas
+- NumPy
+- Scikit-learn
+- Machine Learning
+- Data Cleaning
+- Feature Engineering
+- Classification
+- Predictive Analytics
+
+Key Learning:
+The project provided practical experience working with large datasets, cleaning and combining multiple data sources, engineering meaningful features, building classification models, evaluating model performance, and translating machine learning results into business insights.

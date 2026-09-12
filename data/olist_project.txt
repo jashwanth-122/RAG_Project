@@ -1,0 +1,109 @@
+An end-to-end cloud data pipeline that ingests raw e-commerce data into AWS S3, cleans and joins it with PySpark, and trains a machine learning model to predict late deliveries.
+
+Project Overview The goal of this project is to demonstrate a real cloud-based data engineering and data science workflow, using AWS S3 for storage and Apache Spark (PySpark) for distributed data processing, on top of the Olist Brazilian e-commerce dataset.
+
+The project covers:
+
+Raw Data Ingestion to AWS S3
+
+Distributed Data Reading with PySpark
+
+Data Cleaning and Quality Checks
+
+Star Schema Design and Joins
+
+Feature Engineering
+
+Machine Learning with Spark MLlib
+
+Model Evaluation
+
+Business Problem Online retailers need to know which orders are at risk of arriving late so they can proactively manage customer expectations and logistics. This project builds a pipeline that ingests raw order data into the cloud, transforms it into an analysis-ready format, and trains a model that predicts whether a given order will be delivered after its estimated delivery date.
+
+Dataset The project uses the Brazilian E-Commerce Public Dataset by Olist, which contains around 100,000 orders placed between 2016 and 2018, including customer, product, seller, payment, and review information across nine relational tables.
+
+Because the raw dataset files are large and not the focus of this repository, they are not stored here (see .gitignore) — the pipeline expects them in a local data/ folder before running.
+
+Technologies Used Python
+
+Apache Spark / PySpark
+
+Spark MLlib
+
+AWS S3
+
+boto3
+
+Hadoop AWS connector (S3A)
+
+Parquet
+
+Architecture Raw Olist CSV files ↓ AWS S3 (raw/) ↓ PySpark (read, clean, join) ↓ AWS S3 (processed/) — cleaned tables and star schema in Parquet ↓ Feature Engineering ↓ Spark MLlib — Random Forest Classifier ↓ Model Evaluation
+
+Data Ingestion All nine raw Olist CSV files are uploaded to an S3 bucket under a raw/ prefix using boto3. This is the entry point of the pipeline and represents the "landing zone" for raw data in a real cloud data platform.
+
+Data Reading and Cleaning PySpark reads the raw files directly from S3 using the S3A connector. During cleaning, a row-count mismatch was found and fixed in the order reviews table, caused by review comments containing embedded line breaks that Spark's default CSV reader was splitting into extra rows; enabling multiline parsing resolved this and matched the expected row count exactly.
+
+Cleaning steps include:
+
+Dropping incomplete product records missing category information
+
+Collapsing the geolocation table to one row per zip code prefix using averaged coordinates
+
+Flagging delivered orders with a missing delivery date as a data quality issue, rather than dropping them
+
+Cleaned tables are written back to S3 under a processed/ prefix in Parquet format, which is more efficient for Spark to read than CSV and preserves data types.
+
+Star Schema The cleaned data is joined into a star schema: one fact table (order items, including price, freight, payment totals, and review score) and four dimension tables (customers, sellers, products, and orders). A Spark window function is used to resolve orders that have more than one review, keeping only the most recent review per order rather than allowing duplicate join matches. The resulting fact table row count was verified to exactly match the original order items table.
+
+Feature Engineering Features were engineered to predict late delivery, including:
+
+Estimated Delivery Window (days allowed between purchase and estimated delivery)
+
+Order Value and Freight Cost
+
+Item Count and Average Product Weight
+
+Customer State and Product Category
+
+Seasonality Flags — a November flag for Brazil's Black Friday period, and a flag for a data-driven early-2018 disruption window identified during analysis, when late-delivery rates spiked well above normal
+
+Days Since Dataset Start (a continuous time trend)
+
+Modeling A Random Forest Classifier was trained using Spark MLlib to predict whether an order would be delivered late. Categorical features were encoded using StringIndexer, and all features were combined into a single vector using VectorAssembler, following the standard MLlib workflow. Model settings (tree count, depth, and bin count) were tuned to run within local memory constraints while maintaining strong performance.
+
+Model Evaluation The model was evaluated on a held-out test set using ROC-AUC as the primary metric, given the class imbalance in the target (only around 8% of orders are late).
+
+Metric | Score ROC-AUC | 0.758 Weighted Precision | 0.895 Weighted Recall | 0.916 F1 Score | 0.878
+
+The strongest predictors of late delivery were the continuous time trend, the estimated delivery window, customer state, and the early-2018 disruption flag — consistent with patterns found during exploratory analysis of the same dataset.
+
+Repository Contents read_and_understand.py — Initial data loading and exploration from S3
+
+clean_data.py — Data quality checks (missing values, duplicates, row counts)
+
+apply_cleaning.py — Cleaning transformations, saved back to S3 as Parquet
+
+build_schema.py — Star schema construction and joins
+
+feature_engineering.py — Feature creation for the late delivery model
+
+train_model.py — Spark MLlib Random Forest training and evaluation
+
+upload_to_s3.py — Uploads raw CSV files to the S3 bucket
+
+read_from_s3.py — Initial PySpark-to-S3 connection test
+
+load_all_the_tables.py — Loads and inspects all nine raw tables from S3
+
+Key Results Built a complete cloud data pipeline from raw ingestion through model training
+
+Diagnosed and fixed a Spark-specific CSV parsing issue that was inflating row counts
+
+Verified the star schema join logic produced an exact row-count match against the source data
+
+Achieved 0.758 ROC-AUC predicting late deliveries with a distributed Random Forest model
+
+Identified a data-driven early-2018 delivery disruption window as a top predictive feature
+
+Key Outcome This project demonstrates a full cloud data engineering workflow: moving raw data into cloud storage, processing it at scale with a distributed engine, and training a machine learning model on top of that pipeline, rather than working with data purely on a local machine. It complements a companion project built with pandas and scikit-learn on the same dataset, together showing both the local and cloud/distributed sides of a data science and data engineering skill set.
