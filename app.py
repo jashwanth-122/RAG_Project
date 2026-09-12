@@ -5,9 +5,18 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), "src"))
 
 import streamlit as st
+from store_embeddings import store_embeddings
 from generate_answer import generate_answer
 
 st.set_page_config(page_title="Ask My Projects", page_icon=":mag:")
+
+# build the vector database once when the app starts, if it doesn't exist yet
+@st.cache_resource
+def setup_database():
+    store_embeddings()
+    return True
+
+setup_database()
 
 st.title("Ask my project documents")
 st.write("A RAG system that answers questions about my data science portfolio projects, grounded in my own project write-ups.")
